@@ -9,6 +9,11 @@ Supports two LLM providers, selected via LLM_PROVIDER:
 import os
 from dotenv import load_dotenv
 
+
+class ConfigError(Exception):
+    """Raised when required configuration is missing or invalid."""
+    pass
+
 load_dotenv()
 
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "anthropic").lower().strip()
@@ -25,18 +30,18 @@ ENABLE_WEB_SEARCH = os.getenv("ENABLE_WEB_SEARCH", "true").lower() == "true"
 MAX_TOKENS = int(os.getenv("MAX_TOKENS", "2000"))
 
 if LLM_PROVIDER not in ("anthropic", "gemini"):
-    raise EnvironmentError(
+    raise ConfigError(
         f"Invalid LLM_PROVIDER '{LLM_PROVIDER}'. Must be 'anthropic' or 'gemini'."
     )
 
 if LLM_PROVIDER == "anthropic" and not ANTHROPIC_API_KEY:
-    raise EnvironmentError(
+    raise ConfigError(
         "LLM_PROVIDER is 'anthropic' but ANTHROPIC_API_KEY is not set. "
         "Copy .env.example to .env and add your key, or export it in your shell."
     )
 
 if LLM_PROVIDER == "gemini" and not GEMINI_API_KEY:
-    raise EnvironmentError(
+    raise ConfigError(
         "LLM_PROVIDER is 'gemini' but GEMINI_API_KEY is not set. "
         "Copy .env.example to .env and add your key, or export it in your shell. "
         "Get a key at https://aistudio.google.com/apikey"

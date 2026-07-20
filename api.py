@@ -14,17 +14,23 @@ the StaticFiles mount below) in your browser.
 """
 from __future__ import annotations
 
-import traceback
+import logging
+import os
 from dataclasses import asdict
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from orchestrator import Orchestrator, UserRequest
 
 app = FastAPI(title="Multi-Agent Financial Advisor API")
+
+# Configure basic logging for the server
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Allow the frontend (served from a file:// page, or a different port like
 # 5500/3000 during development) to call this API from the browser.
@@ -69,9 +75,10 @@ def analyze(req: AnalyzeRequest):
     try:
         # verbose=False so the [1/6] ... progress prints don't spam the server logs
         result = orchestrator.run(user_request, verbose=False)
-    except Exception as exc:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Pipeline failed: {exc}")
+    except Exception:
+        logger.exception("Pipeline failed during orchestrator.run()")
+        # Avoid leaking internal error text to clients; logs contain details.
+        raise HTTPException(status_code=500, detail="Pipeline failed; see server logs for details")
 
     return {
         "request": asdict(user_request),
@@ -87,4 +94,11 @@ def analyze(req: AnalyzeRequest):
 
 # Optional: serve the frontend from the same server at http://localhost:8000/
 # so you don't need a separate static file server. Comment out if not wanted.
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+if os.path.isdir("static"):
+    app.mount("/", StaticFiles(directory="static", html=True), name="static")
+else:
+    @app.get("/")
+    def root():
+        if os.path.exists("index.html"):
+            return FileResponse("index.html")
+        return {"info": "No static frontend available."}

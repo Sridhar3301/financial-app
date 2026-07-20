@@ -8,6 +8,7 @@ Usage:
 import argparse
 import json
 import sys
+import logging
 from datetime import datetime
 
 from orchestrator import Orchestrator, UserRequest, PipelineResult
@@ -117,11 +118,14 @@ def main():
         risk_profile=args.risk,
     )
 
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+
     orchestrator = Orchestrator()
     try:
         result = orchestrator.run(request)
-    except Exception as exc:
-        print(f"\nPipeline failed: {exc}", file=sys.stderr)
+    except Exception:
+        logger.exception("Pipeline failed during orchestrator.run()")
         sys.exit(1)
 
     print(render_report(result))
