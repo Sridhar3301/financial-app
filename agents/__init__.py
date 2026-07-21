@@ -1,3 +1,4 @@
+from .master_agent import MasterAgent
 from .market_agent import MarketAgent
 from .news_agent import NewsAgent
 from .risk_agent import RiskAgent
@@ -6,6 +7,7 @@ from .verifier_agent import VerifierAgent
 from .explainability_agent import ExplainabilityAgent
 
 __all__ = [
+    "MasterAgent",
     "MarketAgent",
     "NewsAgent",
     "RiskAgent",
